@@ -26,6 +26,7 @@
     },
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src", "vitest.setup.ts"],
+  "include": ["src", "vitest.setup.ts", "tests"],
+  "exclude": ["dist", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

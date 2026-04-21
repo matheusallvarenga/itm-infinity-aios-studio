@@ -1,0 +1,103 @@
+{
+  "name": "itm-infinity-aios-studio",
+  "version": "0.1.0",
+  "private": false,
+  "description": "AIOS Studio — Visual interface + headless SDK for the AIOS framework. Integrates with itm-legendary-infinity-os as a studio submodule.",
+  "type": "module",
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./sdk": {
+      "import": "./dist/sdk/index.esm.js",
+      "require": "./dist/sdk/index.cjs.js",
+      "types": "./dist/sdk/index.d.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.esm.js",
+      "require": "./dist/ui/index.cjs.js",
+      "types": "./dist/ui/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,json,md}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@supabase/supabase-js": "^2.87.1",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.26",
+    "iconoir-react": "^7.11.0",
+    "recharts": "^3.5.1",
+    "tailwind-merge": "^2.2.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.0",
+    "@testing-library/react": "^14.0.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^1.0.0",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^8.56.0",
+    "jsdom": "^23.0.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.2.0",
+    "prettier-plugin-tailwindcss": "^0.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.2.2",
+    "vite": "^5.1.6",
+    "vite-plugin-dts": "^3.7.0",
+    "vitest": "^1.0.0"
+  },
+  "license": "MIT",
+  "author": "Matheus Allvarenga <contato@matheusallvarenga.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matheusallvarenga/itm-infinity-aios-studio.git"
+  },
+  "homepage": "https://github.com/matheusallvarenga/itm-infinity-aios-studio#readme",
+  "bugs": {
+    "url": "https://github.com/matheusallvarenga/itm-infinity-aios-studio/issues"
+  },
+  "keywords": [
+    "aios",
+    "studio",
+    "dashboard",
+    "kanban",
+    "orchestration",
+    "react",
+    "supabase"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

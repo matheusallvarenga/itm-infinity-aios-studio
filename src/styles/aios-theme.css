@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --aios-primary: 256 88% 76%;        /* #A78BFA */
+    --aios-secondary: 262 83% 58%;      /* #7C3AED */
+    --aios-accent: 32 27% 69%;          /* #C9B298 */
+    --aios-bg: 255 20% 6%;              /* near-black violet tint */
+    --aios-card-bg: 255 15% 9%;
+    --aios-border: 255 10% 15%;
+    --aios-text-primary: 0 0% 98%;
+    --aios-text-secondary: 0 0% 64%;
+    --aios-text-muted: 0 0% 45%;
+    --aios-success: 142 71% 45%;        /* #34C759 */
+    --aios-warning: 48 100% 50%;        /* #FFCC00 */
+    --aios-error: 4 100% 59%;           /* #FF3B30 */
+    --aios-info: 195 85% 55%;           /* #32ADE6 */
+  }
+}

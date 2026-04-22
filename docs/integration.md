@@ -267,15 +267,24 @@ itm-legendary-infinity-os/
 import { createAIOSClient } from 'itm-infinity-aios-studio/sdk'
 
 export function bootstrapAIOS() {
-  createAIOSClient({
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  })
+  // Prefer AIOS-dedicated env vars (dual-project mode, see §3.11).
+  // Fall back to host vars for single-project setups.
+  const supabaseUrl =
+    import.meta.env.VITE_AIOS_SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
+  const supabaseAnonKey =
+    import.meta.env.VITE_AIOS_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) return
+
+  createAIOSClient({ supabaseUrl, supabaseAnonKey })
 }
 ```
 
 Call `bootstrapAIOS()` once in the LegendaryOS root (typically
 `src/main.tsx` before `<App />` renders).
+
+> The env-var precedence is documented in [ADR-002](./adr/002-dual-supabase-config.md)
+> and detailed in [§3.11](#311--dual-supabase-configuration) below.
 
 ### 3.9 — Palette tokens
 
@@ -293,6 +302,65 @@ export const palettes = {
   },
 } satisfies Record<Section, Palette>
 ```
+
+### 3.11 — Dual-Supabase Configuration
+
+AIOS Studio and its host may point to **different Supabase projects**. This
+is the recommended configuration when the host owns its own production DB
+(users, subscriptions, domain entities) while AIOS Studio tables
+(`aios_stories`, `aios_workflow_runs`, future telemetry) live in a framework-
+level project (e.g., INTENTUM).
+
+See [ADR-002](./adr/002-dual-supabase-config.md) for the full rationale.
+
+#### `.env.example` (host, 4 vars)
+
+```bash
+# Host app — production DB (users, subscriptions, domain)
+VITE_SUPABASE_URL=https://<host-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<host anon key>
+
+# AIOS Studio target — optional, dedicated project for framework telemetry.
+# Omit these two to reuse the host project (single-project mode).
+VITE_AIOS_SUPABASE_URL=https://<aios-ref>.supabase.co
+VITE_AIOS_SUPABASE_ANON_KEY=<aios anon key>
+```
+
+#### Precedence
+
+The bootstrap in §3.8 reads the AIOS-specific vars first and falls back to
+the host vars. The resulting behaviour is:
+
+| `VITE_AIOS_SUPABASE_*` set | `VITE_SUPABASE_*` set | AIOS Studio reads from |
+|----------------------------|-----------------------|------------------------|
+| ✓ | ✓ | AIOS project (preferred) |
+| ✗ | ✓ | Host project (single-project mode) |
+| ✓ | ✗ | AIOS project |
+| ✗ | ✗ | SDK not initialised; views show empty/loading state |
+
+#### Known warning
+
+With both projects configured, Supabase emits:
+
+```
+GoTrueClient@sb-<ref>-auth-token: Multiple GoTrueClient instances detected
+```
+
+This is benign. AIOS Studio's SDK never calls `signIn`/`signOut`, so there
+is no auth-state race. The warning exists because two `supabase-js` clients
+share the browser's localStorage namespace.
+
+#### Audit trail
+
+Record the mapping between host and AIOS projects in your deployment docs:
+
+```
+# Example: LegendaryOS dev environment
+VITE_SUPABASE_URL         = https://syirdoexfqshfltolitm.supabase.co   # LegendaryOS prod
+VITE_AIOS_SUPABASE_URL    = https://lqevhazsgtxsiqcdchfq.supabase.co   # INTENTUM (framework)
+```
+
+---
 
 ### 3.10 — Testing
 

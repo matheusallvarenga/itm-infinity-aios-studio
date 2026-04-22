@@ -42,7 +42,9 @@ export interface ChatToAIOSResult {
  * the development cycle workflow.
  *
  * Assumes `bootstrapAIOS()` has been called at app startup (see
- * docs/integration.md §3.8).
+ * docs/integration.md §3.8). When the host uses dual-Supabase mode
+ * (ADR-002), `bootstrapAIOS` reads `VITE_AIOS_SUPABASE_URL` first and
+ * falls back to `VITE_SUPABASE_URL` — no change needed here.
  */
 export async function chatToAIOSStory(
   input: ChatToAIOSInput,
@@ -119,3 +121,4 @@ do the propagation.
 
 - [Integration Guide §4](../integration.md#4-sdk-usage-in-background-services)
 - [ADR-001: Dual Surface Architecture](../adr/001-dual-surface-architecture.md)
+- [ADR-002: Dual-Supabase Configuration](../adr/002-dual-supabase-config.md)

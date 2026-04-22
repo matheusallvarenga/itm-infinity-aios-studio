@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-22
+
+### Added
+- ADR-002 documenting dual-Supabase project configuration support
+- Story 0.1.1 tracking the post-delivery verification finding
+- `docs/integration.md §3.11` with 4-var `.env.example` and precedence table
+- Bootstrap snippet in `docs/integration.md §3.8` now reads
+  `VITE_AIOS_SUPABASE_URL` / `VITE_AIOS_SUPABASE_ANON_KEY` first, falling back
+  to host `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`
+
+### Changed
+- ADR-001 status line annotated with partial supersede by ADR-002
+- `docs/adr/README.md` index lists ADR-002
+- `docs/examples/learn-studio-integration.md` references ADR-002 and notes
+  the new precedence in its bootstrap assumption block
+
+### Notes
+- **No SDK runtime changes** — `createAIOSClient({ supabaseUrl, supabaseAnonKey })`
+  signature is unchanged. This release is docs-only inside the submodule; the
+  host (`itm-legendary-infinity-os`) is where the env-var precedence is applied.
+- Non-breaking for v0.1.0 consumers using single-project mode.
+
 ## [0.1.0] - 2026-04-21
 
 ### Added
@@ -31,5 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependabot weekly updates
 - Issue + PR templates
 
-[Unreleased]: https://github.com/matheusallvarenga/itm-infinity-aios-studio/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/matheusallvarenga/itm-infinity-aios-studio/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/matheusallvarenga/itm-infinity-aios-studio/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/matheusallvarenga/itm-infinity-aios-studio/releases/tag/v0.1.0

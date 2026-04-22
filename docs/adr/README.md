@@ -11,7 +11,8 @@ was non-trivial, cross-cutting, or likely to surprise future maintainers.
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [001](./001-dual-surface-architecture.md) | Dual Surface Architecture (UI + SDK) | Accepted | 2026-04-21 |
+| [001](./001-dual-surface-architecture.md) | Dual Surface Architecture (UI + SDK) | Accepted (Context §3.2 superseded by [ADR-002](./002-dual-supabase-config.md)) | 2026-04-21 |
+| [002](./002-dual-supabase-config.md) | Dual-Supabase Configuration Support | Accepted (supersedes ADR-001 §Context partial) | 2026-04-22 |
 
 ## When to write a new ADR
 

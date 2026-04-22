@@ -1,6 +1,6 @@
 {
   "name": "itm-infinity-aios-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "AIOS Studio — Visual interface + headless SDK for the AIOS framework. Integrates with itm-legendary-infinity-os as a studio submodule.",
   "type": "module",

@@ -2,9 +2,21 @@ import { getAIOSClient } from '../lib/supabase';
 import type { MetricsOverview, MetricsTrendPoint, AgentPerformance } from './types';
 
 /**
+ * Compute duration in ms from two ISO timestamp strings.
+ * Returns 0 if either value is missing.
+ */
+function computeDuration(startedAt: string | null, completedAt: string | null): number {
+  if (!startedAt || !completedAt) return 0;
+  return Math.max(0, new Date(completedAt).getTime() - new Date(startedAt).getTime());
+}
+
+/**
  * Get aggregate metrics overview for a time period.
- * Reads from `unified_metrics` table first, falling back to computing
- * from `unified_executions` if no aggregated row is available.
+ *
+ * Reads from `aios_workflow_runs` as a semantic proxy.
+ * See ADR-003 for the full column mapping and rationale.
+ * NOTE: totalCost and totalTokens always return 0 until the
+ * unified_executions pipeline is implemented (v0.3 backlog).
  */
 export async function getOverview(
   period: { start?: string; end?: string } = {}
@@ -14,55 +26,37 @@ export async function getOverview(
     period.start || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const end = period.end || new Date().toISOString();
 
-  // Try unified_metrics (aggregated) first
-  const metricsRes = await client
-    .from('unified_metrics')
-    .select('*')
-    .gte('period_start', start)
-    .lte('period_end', end)
-    .order('period_start', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await client
+    .from('aios_workflow_runs')
+    .select('status, started_at, completed_at')
+    .gte('started_at', start)
+    .lte('started_at', end);
 
-  const metricsData = metricsRes.data as Record<string, any> | null;
-  const metricsErr = metricsRes.error;
-
-  if (metricsData && !metricsErr) {
-    return {
-      totalExecutions: metricsData.total_executions || 0,
-      successfulExecutions: metricsData.successful_executions || 0,
-      failedExecutions: metricsData.failed_executions || 0,
-      successRate: metricsData.success_rate || 0,
-      avgDuration: metricsData.avg_duration || 0,
-      totalCost: metricsData.total_cost || 0,
-      totalTokens: metricsData.total_tokens || 0,
-      activeJobs: metricsData.active_jobs || 0,
-      period: { start, end },
-    };
+  if (error) {
+    throw { code: 'OVERVIEW_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  // Fallback: compute from unified_executions
-  const execsRes = await client
-    .from('unified_executions')
-    .select('status, duration_ms, tokens, cost')
-    .gte('created_at', start)
-    .lte('created_at', end);
+  const rows = (data as Array<Record<string, any>> | null) || [];
+  const total = rows.length;
+  const successful = rows.filter((r) => r.status === 'completed').length;
+  const failed = rows.filter((r) => r.status === 'failed').length;
+  const active = rows.filter((r) => r.status === 'running').length;
 
-  const execs = (execsRes.data as Array<Record<string, any>> | null) || [];
-  const total = execs.length;
-  const successful = execs.filter((e) => e.status === 'success').length;
+  const durationsMs = rows
+    .map((r) => computeDuration(r.started_at, r.completed_at))
+    .filter((d) => d > 0);
 
   return {
     totalExecutions: total,
     successfulExecutions: successful,
-    failedExecutions: total - successful,
+    failedExecutions: failed,
     successRate: total ? successful / total : 0,
-    avgDuration: total
-      ? execs.reduce((s, e) => s + (e.duration_ms || 0), 0) / total
+    avgDuration: durationsMs.length
+      ? durationsMs.reduce((s, d) => s + d, 0) / durationsMs.length
       : 0,
-    totalCost: execs.reduce((s, e) => s + (e.cost || 0), 0),
-    totalTokens: execs.reduce((s, e) => s + (e.tokens || 0), 0),
-    activeJobs: 0,
+    totalCost: 0,    // ADR-003: not tracked in aios_workflow_runs
+    totalTokens: 0,  // ADR-003: not tracked in aios_workflow_runs
+    activeJobs: active,
     period: { start, end },
   };
 }
@@ -70,6 +64,7 @@ export async function getOverview(
 /**
  * Get time-series trend data for visualization.
  * Bucketed by day by default.
+ * See ADR-003 for column mapping from unified_executions → aios_workflow_runs.
  */
 export async function getTrends(
   period: {
@@ -84,11 +79,11 @@ export async function getTrends(
   const end = period.end || new Date().toISOString();
 
   const { data, error } = await client
-    .from('unified_executions')
-    .select('created_at, status, duration_ms, cost')
-    .gte('created_at', start)
-    .lte('created_at', end)
-    .order('created_at', { ascending: true });
+    .from('aios_workflow_runs')
+    .select('started_at, status, completed_at')
+    .gte('started_at', start)
+    .lte('started_at', end)
+    .order('started_at', { ascending: true });
 
   if (error) {
     throw { code: 'TRENDS_QUERY_FAILED', message: error.message, cause: error };
@@ -100,16 +95,17 @@ export async function getTrends(
     { executions: number; errors: number; latencies: number[]; cost: number }
   >();
 
-  for (const e of rows) {
-    const day = String(e.created_at).slice(0, 10);
+  for (const r of rows) {
+    const day = String(r.started_at).slice(0, 10);
     if (!buckets.has(day)) {
       buckets.set(day, { executions: 0, errors: 0, latencies: [], cost: 0 });
     }
     const b = buckets.get(day)!;
     b.executions++;
-    if (e.status !== 'success') b.errors++;
-    if (e.duration_ms) b.latencies.push(e.duration_ms);
-    b.cost += e.cost || 0;
+    if (r.status !== 'completed') b.errors++;
+    const duration = computeDuration(r.started_at, r.completed_at);
+    if (duration > 0) b.latencies.push(duration);
+    // cost: 0 — not tracked in aios_workflow_runs (ADR-003)
   }
 
   return Array.from(buckets.entries()).map(([day, b]) => ({
@@ -124,14 +120,19 @@ export async function getTrends(
 }
 
 /**
- * Get top agents by execution volume (sampled from last 1000 executions).
+ * Get top workflows by execution volume (sampled from last 1000 runs).
+ *
+ * Semantic proxy via ADR-003:
+ *   agentId   → workflow_name (grouped by)
+ *   agentName → workflow_name
+ * Returns AgentPerformance shape for API backward compatibility.
  */
 export async function getTopAgents(limit: number = 10): Promise<AgentPerformance[]> {
   const client = getAIOSClient();
   const { data, error } = await client
-    .from('unified_executions')
-    .select('agent_id, agent_name, status, duration_ms, tokens')
-    .order('created_at', { ascending: false })
+    .from('aios_workflow_runs')
+    .select('workflow_name, triggered_by, status, started_at, completed_at')
+    .order('started_at', { ascending: false })
     .limit(1000);
 
   if (error) {
@@ -139,29 +140,27 @@ export async function getTopAgents(limit: number = 10): Promise<AgentPerformance
   }
 
   const rows = (data as Array<Record<string, any>> | null) || [];
-  const agentMap = new Map<
-    string,
-    { name: string; execs: Array<Record<string, any>> }
-  >();
+  const workflowMap = new Map<string, { runs: Array<Record<string, any>> }>();
 
-  for (const e of rows) {
-    const id = e.agent_id || 'unknown';
-    if (!agentMap.has(id)) {
-      agentMap.set(id, { name: e.agent_name || id, execs: [] });
+  for (const r of rows) {
+    const name = r.workflow_name || 'unknown';
+    if (!workflowMap.has(name)) {
+      workflowMap.set(name, { runs: [] });
     }
-    agentMap.get(id)!.execs.push(e);
+    workflowMap.get(name)!.runs.push(r);
   }
 
-  return Array.from(agentMap.entries())
-    .map(([id, { name, execs }]) => ({
-      agentId: id,
+  return Array.from(workflowMap.entries())
+    .map(([name, { runs }]) => ({
+      agentId: name,
       agentName: name,
-      executions: execs.length,
-      successRate:
-        execs.filter((e) => e.status === 'success').length / execs.length,
+      executions: runs.length,
+      successRate: runs.filter((r) => r.status === 'completed').length / runs.length,
       avgDuration:
-        execs.reduce((s, e) => s + (e.duration_ms || 0), 0) / execs.length,
-      avgTokens: execs.reduce((s, e) => s + (e.tokens || 0), 0) / execs.length,
+        runs
+          .map((r) => computeDuration(r.started_at, r.completed_at))
+          .reduce((s, d) => s + d, 0) / runs.length,
+      avgTokens: 0, // ADR-003: not tracked in aios_workflow_runs
     }))
     .sort((a, b) => b.executions - a.executions)
     .slice(0, limit);

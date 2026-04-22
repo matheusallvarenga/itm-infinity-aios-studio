@@ -162,7 +162,7 @@ export interface Execution {
   complexity?: number;
   routing?: string;
   result?: string;
-  status: 'success' | 'failure' | 'partial';
+  status: WorkflowRunStatus;
   duration_ms?: number;
   tokens?: number;
   cost?: number;

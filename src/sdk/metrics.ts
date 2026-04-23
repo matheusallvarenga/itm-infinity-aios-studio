@@ -1,6 +1,14 @@
 import { getAIOSClient } from '../lib/supabase';
 import type { MetricsOverview, MetricsTrendPoint, AgentPerformance } from './types';
 
+interface WorkflowRunRow {
+  status: string;
+  started_at: string | null;
+  completed_at: string | null;
+  workflow_name?: string;
+  triggered_by?: string;
+}
+
 /**
  * Compute duration in ms from two ISO timestamp strings.
  * Returns 0 if either value is missing.
@@ -36,7 +44,7 @@ export async function getOverview(
     throw { code: 'OVERVIEW_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const rows = (data as WorkflowRunRow[] | null) || [];
   const total = rows.length;
   const successful = rows.filter((r) => r.status === 'completed').length;
   const failed = rows.filter((r) => r.status === 'failed').length;
@@ -89,7 +97,7 @@ export async function getTrends(
     throw { code: 'TRENDS_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const rows = (data as WorkflowRunRow[] | null) || [];
   const buckets = new Map<
     string,
     { executions: number; errors: number; latencies: number[]; cost: number }
@@ -139,11 +147,11 @@ export async function getTopAgents(limit: number = 10): Promise<AgentPerformance
     throw { code: 'TOP_AGENTS_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const rows = (data as WorkflowRunRow[] | null) || [];
   const workflowMap = new Map<string, { runs: typeof rows }>();
 
   for (const r of rows) {
-    const name = r.workflow_name || 'unknown';
+    const name = String(r.workflow_name || 'unknown');
     if (!workflowMap.has(name)) {
       workflowMap.set(name, { runs: [] });
     }

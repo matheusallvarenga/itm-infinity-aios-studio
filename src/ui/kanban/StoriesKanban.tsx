@@ -53,12 +53,12 @@ export function StoriesKanban() {
 
     try {
       await storiesSdk.updateStatus(storyId, newStatus);
-    } catch (_err: unknown) {
+    } catch (err: unknown) {
       // Revert on failure
       setStories((prev) =>
         prev.map((s) => (s.id === storyId ? { ...s, status: existing.status } : s))
       );
-      setError(err?.message || 'Failed to update story status');
+      setError(err instanceof Error ? err.message : 'Failed to update story status');
     }
   };
 

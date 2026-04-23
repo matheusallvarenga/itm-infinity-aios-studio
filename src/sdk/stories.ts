@@ -12,7 +12,7 @@ export async function list(options: ListOptions = {}): Promise<Story[]> {
 
   if (options.filter) {
     for (const [k, v] of Object.entries(options.filter)) {
-      query = query.eq(k, v as any);
+      query = query.eq(k, v as string);
     }
   }
 

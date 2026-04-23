@@ -40,8 +40,8 @@ export function RunDialog({ workflow, open, onOpenChange, onTriggered }: RunDial
       const res = await workflowsSdk.trigger({ workflow_name: workflow.name, params });
       setRun(res);
       onTriggered?.(res);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to trigger workflow');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to trigger workflow');
     } finally {
       setSubmitting(false);
     }

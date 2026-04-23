@@ -27,8 +27,8 @@ export function StoriesKanban() {
       const res = await storiesSdk.list();
       setStories(res);
       setError(null);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load stories');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load stories');
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export function StoriesKanban() {
 
     try {
       await storiesSdk.updateStatus(storyId, newStatus);
-    } catch (err: any) {
+    } catch (_err: unknown) {
       // Revert on failure
       setStories((prev) =>
         prev.map((s) => (s.id === storyId ? { ...s, status: existing.status } : s))

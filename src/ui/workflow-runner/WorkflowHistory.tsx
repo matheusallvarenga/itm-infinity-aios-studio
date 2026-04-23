@@ -20,8 +20,8 @@ export function WorkflowHistory({ refreshKey = 0 }: WorkflowHistoryProps) {
       const res = await workflowsSdk.getHistory(10);
       setRuns(res);
       setError(null);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load history');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load history');
     } finally {
       setLoading(false);
     }

@@ -36,7 +36,7 @@ export async function getOverview(
     throw { code: 'OVERVIEW_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, any>> | null) || [];
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
   const total = rows.length;
   const successful = rows.filter((r) => r.status === 'completed').length;
   const failed = rows.filter((r) => r.status === 'failed').length;
@@ -89,7 +89,7 @@ export async function getTrends(
     throw { code: 'TRENDS_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, any>> | null) || [];
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
   const buckets = new Map<
     string,
     { executions: number; errors: number; latencies: number[]; cost: number }
@@ -139,8 +139,8 @@ export async function getTopAgents(limit: number = 10): Promise<AgentPerformance
     throw { code: 'TOP_AGENTS_QUERY_FAILED', message: error.message, cause: error };
   }
 
-  const rows = (data as Array<Record<string, any>> | null) || [];
-  const workflowMap = new Map<string, { runs: Array<Record<string, any>> }>();
+  const rows = (data as Array<Record<string, unknown>> | null) || [];
+  const workflowMap = new Map<string, { runs: typeof rows }>();
 
   for (const r of rows) {
     const name = r.workflow_name || 'unknown';

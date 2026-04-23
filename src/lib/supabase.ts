@@ -13,14 +13,9 @@ export function createAIOSClient(config: AIOSClientConfig = {}): SupabaseClient 
     _client = config.supabaseClient;
     return _client;
   }
-  const envUrl =
-    typeof import.meta !== 'undefined' && (import.meta as any).env
-      ? (import.meta as any).env.VITE_SUPABASE_URL
-      : undefined;
-  const envKey =
-    typeof import.meta !== 'undefined' && (import.meta as any).env
-      ? (import.meta as any).env.VITE_SUPABASE_ANON_KEY
-      : undefined;
+  const meta = import.meta as ImportMeta & { env?: Record<string, string> };
+  const envUrl = meta.env?.VITE_SUPABASE_URL;
+  const envKey = meta.env?.VITE_SUPABASE_ANON_KEY;
   const url = config.supabaseUrl || envUrl;
   const key = config.supabaseAnonKey || envKey;
   if (!url || !key) {

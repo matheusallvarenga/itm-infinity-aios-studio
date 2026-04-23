@@ -29,7 +29,7 @@ export function Icon({
   strokeWidth = 1.5,
   ...props
 }: IconProps) {
-  const iconoirAny = Iconoir as unknown as Record<string, React.ComponentType<any>>;
+  const iconoirAny = Iconoir as unknown as Record<string, React.ComponentType<Record<string, unknown>>>;
   const IconComponent =
     iconoirAny[name] || iconoirAny.QuestionMarkCircle || iconoirAny.Circle;
 
